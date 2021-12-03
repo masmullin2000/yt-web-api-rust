@@ -12,9 +12,9 @@ fn get_users() -> Vec<User> {
     for index in 1..1001_u16 {
         users.push(User {
             id: index,
-            age: 25,
             first_name: format!("firstName{}", index),
             last_name: format!("lastName{}", index),
+            age: index,
             framework: "Rust (actix-web)".to_owned(),
         })
     }
