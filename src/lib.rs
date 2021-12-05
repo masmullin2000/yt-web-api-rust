@@ -7,7 +7,7 @@ use crate::models::User;
 
 mod models;
 
-fn get_users() -> Vec<User> {
+pub fn get_users() -> Vec<User> {
     let mut users = Vec::with_capacity(1000);
     for index in 1..1001_u16 {
         users.push(User {
@@ -21,7 +21,7 @@ fn get_users() -> Vec<User> {
     users
 }
 
-pub async fn users() -> HttpResponse {
+fn users() -> HttpResponse {
     HttpResponse::Ok().json(get_users())
 }
 
@@ -29,6 +29,8 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
     let server = HttpServer::new(move || {
         App::new().service(web::scope("/api/v1").route("users", web::get().to(users)))
     })
+    // Setting the correct workers made a difference.
+    .workers(8)
     .listen(listener)?
     .run();
     Ok(server)
