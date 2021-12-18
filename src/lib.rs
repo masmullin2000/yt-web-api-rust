@@ -1,9 +1,10 @@
 use std::net::TcpListener;
+use std::sync::Arc;
 
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpResponse, HttpServer};
 
-use crate::models::User;
+use crate::models::*;
 
 mod models;
 
@@ -21,8 +22,12 @@ pub fn get_users() -> Vec<User> {
     users
 }
 
+lazy_static::lazy_static! {
+    static ref CACHED_USERS: Arc<Vec<User>> = Arc::new(get_users());
+}
+
 fn users() -> HttpResponse {
-    HttpResponse::Ok().json(get_users())
+    HttpResponse::Ok().json(&*(CACHED_USERS.clone()))
 }
 
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {

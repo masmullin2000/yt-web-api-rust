@@ -252,6 +252,7 @@ version = "0.1.0"
 dependencies = [
  "actix",
  "actix-web",
+ "lazy_static",
  "serde",
 ]
 
