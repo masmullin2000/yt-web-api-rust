@@ -26,12 +26,10 @@ fn users() -> HttpResponse {
 }
 
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
-    let server = HttpServer::new(move || {
-        App::new().service(web::scope("/api/v1").route("users", web::get().to(users)))
-    })
-    // Setting the correct workers made a difference.
-    .workers(8)
-    .listen(listener)?
-    .run();
+    let server = HttpServer::new(move || App::new().route("users", web::get().to(users)))
+        // Setting the correct workers made a difference.
+        .workers(8)
+        .listen(listener)?
+        .run();
     Ok(server)
 }
