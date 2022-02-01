@@ -21,8 +21,10 @@ pub fn get_users() -> Vec<User> {
     users
 }
 
-fn users() -> HttpResponse {
-    HttpResponse::Ok().json(get_users())
+async fn users() -> HttpResponse {
+    // let users = get_users();
+    let users = web::block(|| get_users()).await.unwrap();
+    HttpResponse::Ok().json(users)
 }
 
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
