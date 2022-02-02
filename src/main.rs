@@ -21,31 +21,22 @@ fn get_users() -> Vec<User> {
     users
 }
 
-/*
-async {
-                    let users = tokio::task::spawn_blocking(|| get_users()).await.unwrap();
-                    HttpResponse::Ok().json(users)
-                }
-*/
+async fn users() -> HttpResponse {
+    let users = tokio::task::spawn_blocking(|| get_users()).await.unwrap();
+    HttpResponse::Ok().json(users)
+}
+
 fn main() -> std::io::Result<()> {
     let runtime = tokio::runtime::Runtime::new().unwrap();
     runtime.block_on(async {
         let listener =
             std::net::TcpListener::bind("0.0.0.0:8083").expect("Failed to bind to port 80");
-        let server = HttpServer::new(move || {
-            App::new().route(
-                "users",
-                web::get().to(async {
-                    //let users = tokio::task::spawn_blocking(|| get_users()).await.unwrap();
-                    HttpResponse::Ok() /*.json(users)*/
-                }),
-            )
-        })
-        // Setting the correct workers made a difference.
-        // .workers(num_cpus::get_physical())
-        .listen(listener)
-        .unwrap()
-        .run();
+        let server = HttpServer::new(move || App::new().route("users", web::get().to(users)))
+            // Setting the correct workers made a difference.
+            // .workers(num_cpus::get_physical())
+            .listen(listener)
+            .unwrap()
+            .run();
     });
 
     Ok(())
