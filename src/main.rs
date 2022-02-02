@@ -36,7 +36,8 @@ fn main() -> std::io::Result<()> {
             // .workers(num_cpus::get_physical())
             .listen(listener)
             .unwrap()
-            .run();
+            .run()
+            .await;
     });
 
     Ok(())
