@@ -1,6 +1,3 @@
-use std::net::TcpListener;
-
-use actix_web::dev::Server;
 use actix_web::{web, App, HttpResponse, HttpServer};
 
 use crate::models::User;
@@ -27,14 +24,18 @@ async fn users() -> HttpResponse {
 }
 
 fn main() -> std::io::Result<()> {
-    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        // let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .worker_threads(num_cpus::get_physical())
+        // .worker_threads(num_cpus::get())
+        .build()
+        .unwrap();
+
     runtime.block_on(async {
-        let listener =
-            std::net::TcpListener::bind("0.0.0.0:8083").expect("Failed to bind to port 80");
-        let server = HttpServer::new(move || App::new().route("users", web::get().to(users)))
-            // Setting the correct workers made a difference.
-            // .workers(num_cpus::get_physical())
-            .listen(listener)
+        let _ = HttpServer::new(move || App::new().route("users", web::get().to(users)))
+            .workers(num_cpus::get_physical())
+            .bind("0.0.0.0:8083")
             .unwrap()
             .run()
             .await;
