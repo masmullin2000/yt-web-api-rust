@@ -17,3 +17,10 @@ actix-web = "4.0.0-rc.2"
 serde = { version = "1", features = ["derive"] }
 num_cpus = "1"
 tokio = { version = "1", features = ["full"] }
+async-std = { version = "1", features = ["unstable"] }
+
+bencher = "0.1.5"
+
+[[bench]]
+name = "example"
+harness = false
