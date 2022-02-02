@@ -1,4 +1,4 @@
-#[actix_web::main]
+#[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     let listener = std::net::TcpListener::bind("0.0.0.0:8083").expect("Failed to bind to port 80");
     api_actix_web::run(listener)?.await
