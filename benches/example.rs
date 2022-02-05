@@ -3,7 +3,7 @@ extern crate bencher;
 
 use bencher::Bencher;
 
-const ITERATIONS: usize = 1000;
+const ITERATIONS: usize = 100;
 
 pub struct User {
     pub(crate) Id: u16,
@@ -36,7 +36,8 @@ fn tokio_blocking(bench: &mut Bencher) {
                 tokio::task::spawn_blocking(|| {
                     let _ = get_users();
                 })
-                .await;
+                .await
+                .unwrap();
             }
         });
         runtime.block_on(j).unwrap();

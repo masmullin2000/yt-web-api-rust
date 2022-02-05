@@ -19,7 +19,7 @@ fn get_users() -> Vec<User> {
 }
 
 async fn users() -> HttpResponse {
-    //let users = actix_web::web::block(|| get_users()).await.unwrap();
+    // let users = actix_web::web::block(|| get_users()).await.unwrap();
     let users = tokio::task::spawn_blocking(|| get_users()).await.unwrap();
     HttpResponse::Ok().json(users)
 }
