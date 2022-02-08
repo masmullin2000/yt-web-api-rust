@@ -41,8 +41,8 @@ async fn users() -> HttpResponse {
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
     let server = HttpServer::new(move || App::new().route("users", web::get().to(users)))
         // Setting the correct workers made a difference.
-        // .workers(num_cpus::get())
-        .workers(num_cpus::get_physical())
+        .workers(num_cpus::get())
+        // .workers(num_cpus::get_physical())
         .listen(listener)?
         .run();
     Ok(server)
