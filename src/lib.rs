@@ -21,15 +21,27 @@ pub fn get_users() -> Vec<User> {
     users
 }
 
+pub fn get_one_user() -> User {
+    User {
+        Id: 1,
+        Age: 25,
+        First_Name: "Michael".to_string(),
+        Last_Name: "Jordan".to_string(),
+        Framework: "actix-web".to_string(),
+    }
+}
+
 async fn users() -> HttpResponse {
     // let users = get_users();
-    let users = web::block(|| get_users()).await.unwrap();
+    let users = get_one_user();
+    // let users = web::block(|| get_users()).await.unwrap();
     HttpResponse::Ok().json(users)
 }
 
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
     let server = HttpServer::new(move || App::new().route("users", web::get().to(users)))
         // Setting the correct workers made a difference.
+        // .workers(num_cpus::get())
         .workers(num_cpus::get_physical())
         .listen(listener)?
         .run();
