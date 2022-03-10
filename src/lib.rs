@@ -32,8 +32,8 @@ pub fn get_one_user() -> User {
 }
 
 async fn users() -> HttpResponse {
-    // let users = get_users();
-    let users = get_one_user();
+    let users = get_users();
+    // let users = get_one_user();
     // let users = web::block(|| get_users()).await.unwrap();
     HttpResponse::Ok().json(users)
 }
