@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use std::net::TcpListener;
 
 use actix_web::dev::Server;
