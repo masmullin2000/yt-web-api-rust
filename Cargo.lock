@@ -229,8 +229,8 @@ dependencies = [
  "actix-web",
  "criterion",
  "num_cpus",
- "rayon",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

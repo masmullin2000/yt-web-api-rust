@@ -11,6 +11,12 @@ pub struct User {
 
 const FRAMEWORK: &str = "Rust (actix";
 
+fn push_raw(s: &mut String, d: &str) {
+    s.push('\"');
+    s.push_str(d);
+    s.push('\"');
+}
+
 impl User {
     pub fn new(id: Int, age: Int, f_name: String, l_name: String) -> Self {
         User {
@@ -20,5 +26,38 @@ impl User {
             LastName: l_name,
             Framework: FRAMEWORK.to_owned(),
         }
+    }
+
+    // this function could take half the time if we didn't have to
+    // turn Id and Age into Strings
+    pub fn fill_json_string(&self, resp: &mut String) {
+        resp.push('{');
+
+        push_raw(resp, "Id");
+        resp.push(':');
+        resp.push_str(&self.Id.to_string());
+        //resp.push_str("000");
+        resp.push(',');
+
+        push_raw(resp, "Age");
+        resp.push(':');
+        resp.push_str(&self.Age.to_string());
+        //resp.push_str("000");
+        resp.push(',');
+
+        push_raw(resp, "FirstName");
+        resp.push(':');
+        push_raw(resp, &self.FirstName);
+        resp.push(',');
+
+        push_raw(resp, "LastName");
+        resp.push(':');
+        push_raw(resp, &self.LastName);
+        resp.push(',');
+
+        push_raw(resp, "Framework");
+        resp.push(':');
+        push_raw(resp, &self.Framework);
+        resp.push('}');
     }
 }
