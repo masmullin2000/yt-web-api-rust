@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use std::cell::RefCell;
 use std::net::TcpListener;
 
 use actix_web::dev::Server;
@@ -9,35 +10,32 @@ use crate::models::User;
 
 mod models;
 
-pub fn get_users() -> Vec<User> {
-    let mut users = Vec::with_capacity(1000);
-    for index in 1..1001_u16 {
-        users.push(User {
-            Id: index,
-            Age: 25,
-            First_Name: format!("First_Name{}", index),
-            Last_Name: format!("Last_Name{}", index),
-            Framework: "Rust (actix-web)".to_owned(),
-        })
-    }
-    users
+thread_local! {
+    static USERS: RefCell<Vec<User>> = RefCell::new(Vec::with_capacity(1000));
 }
 
-pub fn get_one_user() -> User {
-    User {
-        Id: 1,
-        Age: 25,
-        First_Name: "Michael".to_string(),
-        Last_Name: "Jordan".to_string(),
-        Framework: "actix-web".to_string(),
-    }
+fn make_user(idx: models::Int) -> User {
+    User::new(idx, 25, format!("FirstName{idx}"), format!("LastName{idx}"))
+}
+
+pub fn get_users() {
+    USERS.with(|u| {
+        let users = &mut *u.borrow_mut();
+        users.clear();
+        for i in 1..=1000 {
+            let user = make_user(i);
+            users.push(user);
+        }
+    });
 }
 
 async fn users() -> HttpResponse {
-    let users = get_users();
-    // let users = get_one_user();
-    // let users = web::block(|| get_users()).await.unwrap();
-    HttpResponse::Ok().json(users)
+    //let users = get_users();
+    get_users();
+    USERS.with(|u| {
+        let users = &*u.borrow();
+        HttpResponse::Ok().json(users)
+    })
 }
 
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {

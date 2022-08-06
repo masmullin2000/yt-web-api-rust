@@ -16,3 +16,16 @@ actix-web = "4"
 
 serde = { version = "1", features = ["derive"] }
 num_cpus = "1"
+rayon = "*"
+
+[dev-dependencies]
+criterion = "*"
+
+[[bench]]
+name = "bench"
+harness = false
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
