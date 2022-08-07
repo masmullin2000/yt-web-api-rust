@@ -13,10 +13,10 @@ name = "api_actix_web"
 
 [dependencies]
 actix-web = "4"
-
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 num_cpus = "1"
+lru = "0.7"
 
 [dev-dependencies]
 criterion = "*"

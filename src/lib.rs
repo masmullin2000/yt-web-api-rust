@@ -1,23 +1,18 @@
 #![allow(non_snake_case)]
 
+use actix_web::dev::Server;
+use actix_web::{web, App, HttpServer};
 use core::slice;
 use std::cell::RefCell;
 use std::net::TcpListener;
 
-use actix_web::dev::Server;
-use actix_web::{web, App, HttpServer};
-
-use crate::models::User;
+use crate::models::*;
 
 pub mod models;
 
-thread_local! {
-    static USERS: RefCell<Vec<User>> = RefCell::new(Vec::with_capacity(1000));
-    static RESP: RefCell<String> = RefCell::new(String::with_capacity(128 * 1024));
-}
-
+#[inline(always)]
 pub fn make_user(idx: models::Int) -> User {
-    let idx_str = idx.to_string();
+    let idx_str = get_int_string(idx);
 
     let mut f_name = String::with_capacity(16);
     f_name.push_str("FirstName");
@@ -27,15 +22,14 @@ pub fn make_user(idx: models::Int) -> User {
     l_name.push_str("LastName");
     l_name.push_str(&idx_str);
 
-    // this way is slower
-    /*let f_name = format!("FirstName{idx}");*/
-    /*let l_name = format!("LastName{idx}");*/
-
     User::new(idx, 25, f_name, l_name)
 }
 
 // pulled out of async fn users so that it can be benchmarked
 pub fn get_users<'a>() -> &'a [User] {
+    thread_local! {
+        static USERS: RefCell<Vec<User>> = RefCell::new(Vec::with_capacity(1000));
+    }
     USERS.with(|u| {
         let users = &mut *u.borrow_mut();
         if cfg!(feature = "cheating") {
@@ -65,31 +59,22 @@ pub fn get_users<'a>() -> &'a [User] {
 
 // moved out of async in order to run benchmarks
 pub fn get_resp<'a>() -> &'a [u8] {
+    thread_local! {
+        static RESP: RefCell<String> = RefCell::new(String::with_capacity(128 * 1024));
+    }
     RESP.with(|r| {
         let r_str = &mut *r.borrow_mut();
-        
+
         if cfg!(feature = "extreme") {
             // if you don't cheat, you lose
             if r_str.is_empty() {
                 let users = get_users();
-                r_str.push('[');
-                for u in users {
-                    u.fill_json_string(r_str);
-                    r_str.push(',');
-                }
-                r_str.push(']');
-                r_str.remove(r_str.len() - 2);
+                users.serialize_to_string(r_str); 
             }
         } else {
-            let users = get_users();
             r_str.clear();
-            r_str.push('[');
-            for u in users {
-                u.fill_json_string(r_str);
-                r_str.push(',');
-            }
-            r_str.push(']');
-            r_str.remove(r_str.len() - 2);
+            let users = get_users();
+            users.serialize_to_string(r_str);
         }
 
         let r_ptr = r_str.as_ptr();
