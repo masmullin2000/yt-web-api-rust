@@ -18,6 +18,9 @@ serde_json = "1"
 num_cpus = "1"
 lru = "0.7"
 
+mimalloc = { version = "*", default-features = false } # for raw performance
+#mimalloc = "*" # for additional security features, significant performance penalty
+
 [dev-dependencies]
 criterion = "*"
 
@@ -27,9 +30,12 @@ harness = false
 
 [profile.release]
 lto = true
-opt-level = 3
 codegen-units = 1
+strip = "symbols"
+panic = "abort"
 
 [features]
+default = ["mimalloc"]
 cheating = []
 extreme = []
+mimalloc = []
