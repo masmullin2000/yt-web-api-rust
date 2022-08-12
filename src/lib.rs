@@ -17,12 +17,10 @@ pub const AMT_OF_USERS: models::Int = 1000;
 pub fn make_user(idx: models::Int) -> User {
     let idx_str = idx.to_string();
 
-    let mut f_name = String::new();
-    f_name.push_str("FirstName");
+    let mut f_name = models::StringType::from("FirstName");
     f_name.push_str(&idx_str);
 
-    let mut l_name = String::new();
-    l_name.push_str("LastName");
+    let mut l_name = models::StringType::from("LastName");
     l_name.push_str(&idx_str);
 
     User::new(idx, 25, f_name, l_name)
@@ -42,6 +40,15 @@ pub fn get_users<'a>(amt: u16) -> &'a [User] {
             users.push(user);
         }
 
+        // safety: thread_local immutable.  lifetime limited by 'a
+        //         true lifetime is static
+        //
+        // note: we can get rid of this unsafe call
+        //       by having USERS be an Rc<RefCell<Vec<Users>>>
+        //       and after filling users in the for loop
+        //       doing a u.clone() as the return
+        //
+        //       this alternative is overly complex
         let ptr = users.as_ptr();
         unsafe { slice::from_raw_parts(ptr, users.len()) }
     })
@@ -54,16 +61,18 @@ pub fn get_resp<'a>(amt: u16) -> &'a [u8] {
     }
 
     RESP.with(|r| {
-        let mut r_str = &mut *r.borrow_mut();
-        r_str.clear();
+        let mut tl_data = &mut *r.borrow_mut();
+        tl_data.clear();
 
         let users = get_users(amt);
 
-        let writer = std::io::BufWriter::new(&mut r_str);
+        let writer = std::io::BufWriter::new(&mut tl_data);
         serde_json::to_writer(writer, users).expect("could not serialize");
 
-        let r_ptr = r_str.as_ptr();
-        unsafe { slice::from_raw_parts(r_ptr, r_str.len()) }
+        // safety: thread_local immutable.  lifetime limited by 'a
+        //         true lifetime is static
+        let r_ptr = tl_data.as_ptr();
+        unsafe { slice::from_raw_parts(r_ptr, tl_data.len()) }
     })
 }
 
