@@ -37,3 +37,4 @@ panic = "abort"
 [features]
 default = ["mimalloc"]
 mimalloc = []
+query_string = []

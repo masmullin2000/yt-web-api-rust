@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use actix_web::dev::Server;
-use actix_web::{web, App, HttpServer};
+use actix_web::{web, App, HttpServer, HttpResponse};
 use core::slice;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -31,6 +31,7 @@ pub fn get_users<'a>(amt: u16) -> &'a [User] {
     thread_local! {
         static USERS: RefCell<Vec<User>> = RefCell::new(Vec::new());
     }
+
     USERS.with(|u| {
         let users = &mut *u.borrow_mut();
         users.clear();
@@ -43,6 +44,8 @@ pub fn get_users<'a>(amt: u16) -> &'a [User] {
         // safety: thread_local immutable.  lifetime limited by 'a
         //         true lifetime is static
         //
+        //         must NEVER escape to where an await can be called
+        //
         // note: we can get rid of this unsafe call
         //       by having USERS be an Rc<RefCell<Vec<Users>>>
         //       and after filling users in the for loop
@@ -54,33 +57,28 @@ pub fn get_users<'a>(amt: u16) -> &'a [User] {
     })
 }
 
-// moved out of async in order to run benchmarks
-pub fn get_resp<'a>(amt: u16) -> &'a [u8] {
-    thread_local! {
-        static RESP: RefCell<Vec<u8>> = RefCell::new(Vec::new());
-    }
+pub fn get_resp(amt: u16) -> Vec<u8> {
+    // note amount of bytes for a single User as Json formatted
+    // is between 93 and 105 bytes.  128 is simply a nice binary number
+    let mut resp = Vec::with_capacity((amt as usize) * 128);
 
-    RESP.with(|r| {
-        let mut tl_data = &mut *r.borrow_mut();
-        tl_data.clear();
+    let users = get_users(amt);
 
-        let users = get_users(amt);
+    let writer = std::io::BufWriter::new(&mut resp);
+    serde_json::to_writer(writer, users).expect("could not serialize");
 
-        let writer = std::io::BufWriter::new(&mut tl_data);
-        serde_json::to_writer(writer, users).expect("could not serialize");
-
-        // safety: thread_local immutable.  lifetime limited by 'a
-        //         true lifetime is static
-        let r_ptr = tl_data.as_ptr();
-        unsafe { slice::from_raw_parts(r_ptr, tl_data.len()) }
-    })
+    resp
 }
 
-async fn users<'a>(req: actix_web::HttpRequest) -> &'a [u8] {
-    let amt = if let Ok(params) = web::Query::<HashMap<String, u16>>::from_query(req.query_string())
-    {
-        if let Some(amt) = params.get("amt") {
-            *amt
+async fn users(req: actix_web::HttpRequest) -> HttpResponse {
+    let amt = if cfg!(feature = "query_string") {
+        if let Ok(params) = web::Query::<HashMap<String, u16>>::from_query(req.query_string())
+        {
+            if let Some(amt) = params.get("amt") {
+                *amt
+            } else {
+                AMT_OF_USERS
+            }
         } else {
             AMT_OF_USERS
         }
@@ -88,7 +86,8 @@ async fn users<'a>(req: actix_web::HttpRequest) -> &'a [u8] {
         AMT_OF_USERS
     };
 
-    get_resp(amt)
+    let resp = get_resp(amt);
+    HttpResponse::Ok().body(resp)
 }
 
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
