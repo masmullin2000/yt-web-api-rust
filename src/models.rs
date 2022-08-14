@@ -1,11 +1,8 @@
-use serde::Serialize;
-use smallstr::SmallString;
-
 pub type Int = u16;
-pub type StringType = SmallString<[u8; 16]>;
+pub type StringType = smallstr::SmallString<[u8; 16]>;
 const FRAMEWORK: &str = "Rust (actix";
 
-#[derive(Serialize)]
+#[derive(serde::Serialize)]
 pub struct User {
     pub(crate) Id: Int,
     pub(crate) Age: Int,
@@ -22,7 +19,7 @@ impl User {
             Age: age,
             FirstName: f_name,
             LastName: l_name,
-            Framework: FRAMEWORK, //.to_owned(),
+            Framework: FRAMEWORK,
         }
     }
 }

@@ -29,7 +29,7 @@ pub fn make_user(idx: models::Int) -> User {
 // pulled out of async fn users so that it can be benchmarked
 pub fn get_users<'a>(amt: u16) -> &'a [User] {
     thread_local! {
-        static USERS: RefCell<Vec<User>> = RefCell::new(Vec::new());
+        static USERS: RefCell<Vec<User>> = RefCell::new(Vec::with_capacity(AMT_OF_USERS as usize));
     }
 
     USERS.with(|u| {
