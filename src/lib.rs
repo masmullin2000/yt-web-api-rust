@@ -1,7 +1,8 @@
 #![allow(non_snake_case)]
 
 use actix_web::dev::Server;
-use actix_web::{web, App, HttpServer, HttpResponse};
+use actix_web::web::Query;
+use actix_web::{web, App, HttpResponse, HttpServer};
 use core::slice;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -10,6 +11,7 @@ use std::net::TcpListener;
 use crate::models::*;
 
 pub mod models;
+pub mod utils;
 
 pub const AMT_OF_USERS: models::Int = 1000;
 
@@ -61,19 +63,37 @@ pub fn get_resp(amt: u16) -> Vec<u8> {
     // note amount of bytes for a single User as Json formatted
     // is between 93 and 105 bytes.  128 is simply a nice binary number
     let mut resp = Vec::with_capacity((amt as usize) * 128);
-
     let users = get_users(amt);
 
-    let writer = std::io::BufWriter::new(&mut resp);
-    serde_json::to_writer(writer, users).expect("could not serialize");
+    #[cfg(feature = "scary_speed")]
+    {
+        // WARNING: With scary_speed, you have to make damn sure
+        // that there is enough space in resp to hold all the json
+        // !!!!!
+        // Thats why it's "scary"
+        let writer = utils::scary_speed::Writer::new(&mut resp);
+        serde_json::to_writer(writer, users).expect("no serial");
+    }
+
+    #[cfg(feature = "tech_emp")]
+    {
+        // technique from tech_empower actix_web benchmark
+        let writer = utils::tech_emp::Writer(&mut resp);
+        serde_json::to_writer(writer, users).expect("no serial");
+    }
+
+    #[cfg(not(any(feature = "tech_emp", feature = "scary_speed")))]
+    {
+        let writer = std::io::BufWriter::new(&mut resp);
+        serde_json::to_writer(writer, users).expect("could not serialize");
+    }
 
     resp
 }
 
 async fn users(req: actix_web::HttpRequest) -> HttpResponse {
     let amt = if cfg!(feature = "query_string") {
-        if let Ok(params) = web::Query::<HashMap<String, u16>>::from_query(req.query_string())
-        {
+        if let Ok(params) = Query::<HashMap<String, u16>>::from_query(req.query_string()) {
             if let Some(amt) = params.get("amt") {
                 *amt
             } else {

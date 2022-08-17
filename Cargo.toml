@@ -38,3 +38,5 @@ panic = "abort"
 default = ["mimalloc"]
 mimalloc = []
 query_string = []
+scary_speed = []
+tech_emp = []
